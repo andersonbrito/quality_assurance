@@ -11,7 +11,7 @@ rule files:
 		new_genomes = "input_files/new_genomes.fasta",
 		aligned = "input_files/aligned.fasta",
 		metadata_gisaid = "input_files/metadata_nextstrain.tsv",
-		metadata_samples = "input_files/COVID-19_sequencing.xlsx",
+		metadata_samples = "input_files/GLab_SC2_sequencing_data.xlsx",
 		reference = "input_files/reference.gb",
 		refgenome_size = "29903",
 		max_missing = "30"
@@ -120,6 +120,7 @@ rule inspect_metadata:
 rule multifasta:
 	message:
 		"""
+		Combining sequence files as a multifasta file
 		"""
 	input:
 		base_dataset = rules.lineages.output.base_dataset,
@@ -150,6 +151,7 @@ rule multifasta:
 rule combine_metadata:
 	message:
 		"""
+		Combining metadata files
 		"""
 	input:
 		base_metadata = rules.lineages.output.base_metadata,

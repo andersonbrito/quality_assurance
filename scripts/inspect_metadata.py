@@ -64,11 +64,14 @@ if __name__ == '__main__':
             df.fillna('', inplace=True)
             df = df.rename(columns={'Sample-ID': 'id'})
             df = df[~df[index].isin([''])]  # drop row with empty index
+            if 'Date Sequenced' in df.columns.to_list():
+                df = df[~df['Date Sequenced'].isin([''])]
+            if 'Update' in df.columns.to_list():
+                df = df[~df['Update'].isin([''])]
         else:
             print('Wrong file format. Compatible file formats: TSV, CSV, XLS, XLSX')
             exit()
         return df
-
 
     # Load QA matrix
     dfQ = load_table(matrix)
@@ -77,8 +80,8 @@ if __name__ == '__main__':
     dfS = load_table(metadata)
     dfS['region'] = ''
     # dfS = dfS.rename(columns={'Date': 'date', 'Country': 'country', 'State': 'division', 'Site': 'originating_lab'})
-    dfS = dfS.rename(columns={'Sample-ID': 'id', 'Collection-date': 'date', 'Country': 'country', 'Division': 'division',
-                          'State': 'code', 'Location': 'location', 'Lineage': 'pangolin_lineage', 'Source': 'originating_lab',
+    dfS = dfS.rename(columns={'Sample-ID': 'id', 'Collection-date': 'date', 'Country': 'country', 'Division (state)': 'division',
+                          'Location (county)': 'location', 'Lineage': 'pangolin_lineage', 'Source': 'originating_lab',
                           'Update': 'update'})
     if 'update' in dfS.columns.to_list():
         dfS = dfS[~dfS['update'].isin([''])]  # drop row with empty update information

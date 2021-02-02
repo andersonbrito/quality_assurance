@@ -75,6 +75,8 @@ if __name__ == '__main__':
         # elif id not in sequences.keys():
         elif df1.loc[id, 'metadata_status'] == 'FAIL': # sequences that failed at metadata inspection
             status = 'FAIL'
+        elif df1.loc[id, 'seq_coverage_status'] == 'FAIL': # sequences that failed at metadata inspection
+            status = 'FAIL'
         else:
             status = 'PASS'
         return status
