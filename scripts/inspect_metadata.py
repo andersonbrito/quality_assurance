@@ -64,10 +64,6 @@ if __name__ == '__main__':
             df.fillna('', inplace=True)
             df = df.rename(columns={'Sample-ID': 'id'})
             df = df[~df[index].isin([''])]  # drop row with empty index
-            if 'Date Sequenced' in df.columns.to_list():
-                df = df[~df['Date Sequenced'].isin([''])]
-            if 'Update' in df.columns.to_list():
-                df = df[~df['Update'].isin([''])]
         else:
             print('Wrong file format. Compatible file formats: TSV, CSV, XLS, XLSX')
             exit()
@@ -85,6 +81,8 @@ if __name__ == '__main__':
                           'Update': 'update'})
     if 'update' in dfS.columns.to_list():
         dfS = dfS[~dfS['update'].isin([''])]  # drop row with empty update information
+    if 'Date Sequenced' in dfS.columns.to_list():
+        dfS = dfS[~df['Date Sequenced'].isin([''])]
 
     dfS['date'] = dfS['date'].replace({'?': ''})
     dfS.fillna('', inplace=True)
