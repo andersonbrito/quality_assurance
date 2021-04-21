@@ -147,7 +147,7 @@ rule multifasta:
 		"""
 	input:
 		base_dataset = rules.lineages.output.base_dataset,
-		new_genomes = rules.filter_coverage.output.new_sequences,
+		new_genomes = "output_files/sequences/renamed_genomes.fasta",
 		qamatrix = rules.inspect_metadata.output.matrix,
 		rename_file = rules.inspect_metadata.output.rename
 	params:
