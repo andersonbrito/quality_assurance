@@ -18,14 +18,15 @@ if __name__ == '__main__':
     parser.add_argument("--metadata2", required=True, help="Metadata file from GISAID")
     parser.add_argument("--output", required=True, help="Merged metadata file")
     args = parser.parse_args()
-    
+
     metadata1 = args.metadata1
     metadata2 = args.metadata2
     output = args.output
 
-#     metadata1 = path + 'metadata_nextstrain.tsv'
-#     metadata2 = path + 'gisaid_hcov-19_2021_01_18_07.tsv'
-#     output = path + 'metadata_merged.tsv'
+    # path = '/Users/anderson/GLab Dropbox/Anderson Brito/projects/ncov/ncov_impacc/nextstrain/run8_20210402_impacc/'
+    # metadata1 = path + 'output_files/metadata/base_metadata.tsv'
+    # metadata2 = path + 'output_files/assured_data/sample_metadata.tsv'
+    # output = path + 'output_files/metadata/metadata_merged.tsv'
 
     separator1 = ''
     if str(metadata1).split('.')[-1] == 'tsv':
@@ -43,12 +44,15 @@ if __name__ == '__main__':
     # nextstrain metadata
     dfN = pd.read_csv(metadata1, encoding='utf-8', sep=separator1, dtype='str')
     dfN.fillna('', inplace=True)
+    dfN = dfN.rename(columns={'age': 'admit_age'})
 
     # Extra metadata
     dfG = pd.read_csv(metadata2, encoding='utf-8', sep=separator2, dtype='str')
 
-    list_columns = [col for col in dfG.columns.to_list() if col in dfN.columns.to_list() + ['Location']]  # list of columns in common
-    dfG = dfG[list_columns]
+    # list_columns = [col for col in dfG.columns.to_list() if col in dfN.columns.to_list()]  # list of columns in common
+    # list_columns = list(set(dfG.columns.to_list() + dfN.columns.to_list()))
+    # print(list_columns)
+    # dfG = dfG[list_columns]
 
     # merge frames
     frames = [dfN, dfG]

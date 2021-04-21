@@ -8,10 +8,13 @@ options = rules.options.params
 rule files:
 	params:
 		sequence_dataset = "input_files/gisaid_hcov-19.fasta",
-		new_genomes = "input_files/new_genomes.fasta",
+		new_genomes = "input_files/genome_sequences.fasta",
 		aligned = "input_files/aligned.fasta",
 		metadata_gisaid = "input_files/metadata_nextstrain.tsv",
-		metadata_samples = "input_files/GLab_SC2_sequencing_data.xlsx",
+		corelab_metadata = "input_files/metadata_impacc.csv",
+		sample_metadata = "input_files/impacc-virology-clin-sample.csv",
+		patient_metadata = "input_files/impacc-virology-clin-individ.csv",
+		batch_layout = "input_files/batch_layout.csv",
 		reference = "input_files/reference.gb",
 		refgenome_size = "29903",
 		max_missing = "30"
@@ -31,6 +34,7 @@ rule lineages:
 		metadata = files.metadata_gisaid
 	params:
 		download_file = "yes",
+		howmany = 1
 	output:
 		list = "output_files/sequences/rep_genomes.txt",
 		base_dataset = "output_files/sequences/base_dataset.fasta",
@@ -39,6 +43,7 @@ rule lineages:
 		"""
 		python3 scripts/get_lineage_reps.py \
 			--download {params.download_file} \
+			--howmany {params.howmany} \
 			--output {output.list}
 		
 		echo Wuhan/Hu-1/2019 >> {output.list}
@@ -74,10 +79,12 @@ rule filter_coverage:
 		genomes = files.new_genomes
 	params:
 		size = files.refgenome_size,
-		index = 'id',
+		index = "sample_id",
 		missing = files.max_missing
 	output:
-		matrix = "output_files/qa/qa_matrix1.tsv"
+		matrix = "output_files/qa/qa_matrix1.tsv",
+		rename = "output_files/sequences/rename.tsv",
+		new_sequences = "output_files/sequences/renamed_genomes.fasta"
 	shell:
 		"""
 		python3 scripts/filter_by_coverage.py \
@@ -85,7 +92,16 @@ rule filter_coverage:
 			--index {params.index} \
 			--refgenome-size {params.size} \
 			--max-missing {params.missing} \
-			--output {output.matrix}
+			--output {output.matrix} \
+			--output2 {output.rename}
+			
+		
+		python3 scripts/seqtree_handler.py \
+			--input {input.genomes} \
+			--format fasta \
+			--action rename \
+			--list {output.rename} \
+			--output {output.new_sequences}	
 		"""
 
 
@@ -97,23 +113,30 @@ rule inspect_metadata:
 		- Expand quality assurance matrix
 		"""
 	input:
-		genomes = files.new_genomes,
-		metadata = files.metadata_samples,
+		metadata1 = files.corelab_metadata,
+		metadata2 = files.sample_metadata,
+		metadata3 = files.patient_metadata,
+		batch = files.batch_layout,
 		matrix1 = rules.filter_coverage.output.matrix
 	params:
-		index = "id"
+		index = "sample_id"
 	output:
 		sample_metadata = "output_files/assured_data/sample_metadata.tsv",
-		matrix = "output_files/qa/qa_matrix2.tsv"
+		matrix = "output_files/qa/qa_matrix2.tsv",
+		rename = "output_files/sequences/rename2.tsv"
 	shell:
 		"""
 		python3 scripts/inspect_metadata.py \
-			--genomes {input.genomes} \
-			--metadata {input.metadata} \
+			--metadata1 {input.metadata1} \
+			--metadata2 {input.metadata2} \
+			--metadata3 {input.metadata3} \
+			--batch {input.batch} \
 			--index {params.index} \
 			--matrix {input.matrix1} \
 			--output1 {output.sample_metadata} \
-			--output2 {output.matrix}
+			--output2 {output.matrix} \
+			--output3 {output.rename}
+		
 		"""
 
 
@@ -124,14 +147,15 @@ rule multifasta:
 		"""
 	input:
 		base_dataset = rules.lineages.output.base_dataset,
-		new_genomes = files.new_genomes,
-		qamatrix = rules.inspect_metadata.output.matrix
+		new_genomes = rules.filter_coverage.output.new_sequences,
+		qamatrix = rules.inspect_metadata.output.matrix,
+		rename_file = rules.inspect_metadata.output.rename
 	params:
-		format = "fasta",
-		action = "remove"
+		format = "fasta"
 	output:
 		list_seqs = "output_files/sequences/full_genomes_list.txt",
 		filtered_seqs = "output_files/sequences/filtered_seqs.fasta",
+		ren_sequences = "output_files/sequences/renamed_seqs.fasta",
 		combined_seqs = "output_files/sequences/sequences.fasta"
 	shell:
 		"""
@@ -139,12 +163,19 @@ rule multifasta:
 
 		python3 scripts/seqtree_handler.py \
 			--input {input.new_genomes} \
-			--format fasta \
+			--format {params.format} \
 			--action keep \
 			--list {output.list_seqs} \
 			--output {output.filtered_seqs}
 		
-		cat {input.base_dataset} {output.filtered_seqs} > {output.combined_seqs}
+		python3 scripts/seqtree_handler.py \
+			--input {output.filtered_seqs} \
+			--format {params.format} \
+			--action rename \
+			--list {input.rename_file} \
+			--output {output.ren_sequences}	
+
+		cat {input.base_dataset} {output.ren_sequences} > {output.combined_seqs}
 		"""
 
 
@@ -157,7 +188,7 @@ rule combine_metadata:
 		base_metadata = rules.lineages.output.base_metadata,
 		sample_metadata = rules.inspect_metadata.output.sample_metadata
 	output:
-		combined_metadata = "output_files/metadata/metadata.tsv"
+		combined_metadata = "output_files/assured_data/metadata.tsv"
 	shell:
 		"""
 		python3 scripts/metadata_merger.py \
@@ -260,6 +291,7 @@ rule root2tip:
 	params:
 		clock_rate = 0.0008,
 		clock_std_dev = 0.0004,
+		root = "Wuhan/Hu-1/2019 Wuhan/WH01/2019",
 		outdir = "./output_files/root2tip"
 	output:
 		outliers = "output_files/root2tip/outliers_list.txt"
@@ -270,7 +302,7 @@ rule root2tip:
 			--aln {input.alignment} \
 			--dates {input.metadata} \
 			--clock-filter 4 \
-			--reroot Wuhan/Hu-1/2019 \
+			--reroot {params.root} \
 			--gtr JC69 \
 			--clock-rate {params.clock_rate} \
 			--clock-std-dev {params.clock_std_dev} \
@@ -296,12 +328,15 @@ rule assurance:
 		qamatrix2 = rules.inspect_metadata.output.matrix,
 		outliers = rules.root2tip.output.outliers,
 		lineage_seqs = rules.lineages.output.list,
-		genomes = rules.multifasta.output.filtered_seqs
+		genomes = rules.multifasta.output.filtered_seqs,
+		rename_file = rules.inspect_metadata.output.rename
 	params:
-		index = 'id'
+		index = "sample_id",
+		format = "fasta"
 	output:
 		qamatrix = "output_files/assured_data/qa_matrix.tsv",
-		quality_seqs = "output_files/assured_data/genomes.fasta"
+		quality_seqs = "output_files/assured/quality_genomes.fasta",
+		final_seqs = "output_files/assured_data/sequences.fasta",
 	shell:
 		"""
 		python3 scripts/get_QAmatrix.py \
@@ -311,6 +346,13 @@ rule assurance:
 			--index {params.index} \
 			--output1 {output.qamatrix} \
 			--output2 {output.quality_seqs}
+
+		python3 scripts/seqtree_handler.py \
+			--input {output.quality_seqs} \
+			--format {params.format} \
+			--action rename \
+			--list {input.rename_file} \
+			--output {output.final_seqs}	
 		"""
 
 
