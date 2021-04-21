@@ -15,7 +15,7 @@ rule files:
 		sample_metadata = "input_files/impacc-virology-clin-sample.csv",
 		patient_metadata = "input_files/impacc-virology-clin-individ.csv",
 		batch_layout = "input_files/batch_layout.csv",
-		reference = "input_files/reference.gb",
+		reference = "config/reference.gb",
 		refgenome_size = "29903",
 		max_missing = "30"
 
