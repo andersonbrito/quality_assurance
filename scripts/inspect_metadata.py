@@ -9,8 +9,8 @@
 import pandas as pd
 import numpy as np
 import argparse
-from datetime import datetime
-
+from datetime import datetime, timedelta
+from epiweeks import Week, Year
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
@@ -39,7 +39,7 @@ if __name__ == '__main__':
     output3 = args.output3
 
 
-    # path = "/Users/anderson/GLab Dropbox/Anderson Brito/projects/ncov/ncov_impacc/nextstrain/run8_20210402_impacc/"
+    # path = "/Users/anderson/GLab Dropbox/Anderson Brito/projects/ncov/ncov_impacc/nextstrain/template/"
     # cl_metadata = path + 'input_files/metadata_impacc.csv'
     # cs_metadata = path + 'input_files/impacc-virology-clin-sample.csv'
     # ci_metadata = path + 'input_files/impacc-virology-clin-individ.csv'
@@ -58,11 +58,11 @@ if __name__ == '__main__':
         if str(file).split('.')[-1] == 'tsv':
             separator = '\t'
             df = pd.read_csv(file, encoding='utf-8', sep=separator, dtype='str')
-            df = df.rename(columns={'guspec': index, 'txtpid': 'participant_id'})
+            df = df.rename(columns={'guspec': index, 'txtpid': 'participant_id', 'visitnum': 'visit_num'})
         elif str(file).split('.')[-1] == 'csv':
             separator = ','
             df = pd.read_csv(file, encoding='utf-8', sep=separator, dtype='str')
-            df = df.rename(columns={'guspec': index, 'txtpid': 'participant_id'})
+            df = df.rename(columns={'guspec': index, 'txtpid': 'participant_id', 'visitnum': 'visit_num'})
         elif str(file).split('.')[-1] in ['xls', 'xlsx']:
             df = pd.read_excel(file, index_col=None, header=0, sheet_name=0, dtype='str')
             df.fillna('', inplace=True)
@@ -78,13 +78,20 @@ if __name__ == '__main__':
     dfL.fillna('', inplace=True)
     dfL['visit_num'] = dfL['visit_num'].apply(lambda x: x.split(' ')[1] if ' ' in x else x)
 
-    print('\n### Inspecting metadata columns...\n')
 
+    print('\n### Inspecting metadata columns...\n')
     # load clinical sample metadata
     def year_week(y, w):
-        return datetime.strptime(f'{y} {w} 3', '%G %V %u')
+        if w not in ['', np.nan, None] and y not in ['', np.nan, None]:
+            week = Week(int(y), int(w))
+            date = week.startdate() + timedelta(3)
+            return date
+        else:
+            return ''
+
 
     dfCS = load_table(cs_metadata)
+    dfCS.fillna('', inplace=True)
     dfCS['date'] = dfCS.apply(lambda row: year_week(row['calendar_year'], row['calendar_week']), axis=1)
 
     # fix date format
@@ -145,7 +152,6 @@ if __name__ == '__main__':
     for id in list_id:
         missing[id] = []
 
-
     # add missing metadata into QA matrix
     for idx, row in dfL.iterrows():
         sample_id = dfL.loc[idx, index]
@@ -155,7 +161,6 @@ if __name__ == '__main__':
                 if column in dfL.columns.tolist():
                     dict_row[column] = dfL.loc[dfL[index] == sample_id, column].iloc[0]
             dfQ = dfQ.append(dict_row, ignore_index=True)
-
 
     print('\n### Processing batch layout...\n')
 
