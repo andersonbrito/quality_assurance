@@ -82,13 +82,15 @@ if __name__ == '__main__':
     print('\n### Inspecting metadata columns...\n')
     # load clinical sample metadata
     def year_week(y, w):
-        if w not in ['', np.nan, None] and y not in ['', np.nan, None]:
-            week = Week(int(y), int(w))
-            date = week.startdate() + timedelta(3)
-            return date
-        else:
+        try:
+            if w not in ['', np.nan, None] and y not in ['', np.nan, None]:
+                week = Week(int(y), int(w))
+                date = week.startdate() + timedelta(3)
+                return date
+            else:
+                return ''
+        except:
             return ''
-
 
     dfCS = load_table(cs_metadata)
     dfCS.fillna('', inplace=True)
@@ -135,7 +137,7 @@ if __name__ == '__main__':
     # redefine indexes, round 1
     dfL = dfL.set_index(index)
     dfCS = dfCS.set_index(index)
-    dfL = melt_metadata(dfL, dfCS, ['date', 'trajgroup'])
+    dfL = melt_metadata(dfL, dfCS, ['date', 'trajectory_group'])
 
     # redefine indexes, round 2
     dfL = dfL.set_index('participant_id')

@@ -146,7 +146,7 @@ rule multifasta:
 		Combining sequence files as a multifasta file
 		"""
 	input:
-		base_dataset = rules.lineages.output.base_dataset,
+		base_dataset = "output_files/sequences/base_dataset.fasta",
 		new_genomes = "output_files/sequences/renamed_genomes.fasta",
 		qamatrix = rules.inspect_metadata.output.matrix,
 		rename_file = rules.inspect_metadata.output.rename
@@ -185,7 +185,7 @@ rule combine_metadata:
 		Combining metadata files
 		"""
 	input:
-		base_metadata = rules.lineages.output.base_metadata,
+		base_metadata = "output_files/metadata/base_metadata.tsv",
 		sample_metadata = rules.inspect_metadata.output.sample_metadata
 	output:
 		combined_metadata = "output_files/assured_data/metadata.tsv"
@@ -327,7 +327,7 @@ rule assurance:
 	input:
 		qamatrix2 = rules.inspect_metadata.output.matrix,
 		outliers = rules.root2tip.output.outliers,
-		lineage_seqs = rules.lineages.output.list,
+		lineage_seqs = "output_files/sequences/rep_genomes.txt",
 		genomes = rules.multifasta.output.filtered_seqs,
 		rename_file = rules.inspect_metadata.output.rename
 	params:
