@@ -121,7 +121,7 @@ rule inspect_metadata:
 	params:
 		index = "sample_id"
 	output:
-		sample_metadata = "output_files/assured_data/sample_metadata.tsv",
+		sample_metadata = "output_files/assured_data/metadata.tsv",
 		matrix = "output_files/qa/qa_matrix2.tsv",
 		rename = "output_files/sequences/rename2.tsv"
 	shell:
@@ -188,7 +188,7 @@ rule combine_metadata:
 		base_metadata = "output_files/metadata/base_metadata.tsv",
 		sample_metadata = rules.inspect_metadata.output.sample_metadata
 	output:
-		combined_metadata = "output_files/assured_data/metadata.tsv"
+		combined_metadata = "output_files/metadata/combined_metadata.tsv"
 	shell:
 		"""
 		python3 scripts/metadata_merger.py \
@@ -301,7 +301,7 @@ rule root2tip:
 			--tree {input.tree} \
 			--aln {input.alignment} \
 			--dates {input.metadata} \
-			--clock-filter 4 \
+			--clock-filter 3 \
 			--reroot {params.root} \
 			--gtr JC69 \
 			--clock-rate {params.clock_rate} \
@@ -335,7 +335,7 @@ rule assurance:
 		format = "fasta"
 	output:
 		qamatrix = "output_files/assured_data/qa_matrix.tsv",
-		quality_seqs = "output_files/assured/quality_genomes.fasta",
+		quality_seqs = "output_files/sequences/quality_genomes.fasta",
 		final_seqs = "output_files/assured_data/sequences.fasta",
 	shell:
 		"""
