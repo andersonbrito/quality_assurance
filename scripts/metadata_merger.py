@@ -4,7 +4,7 @@
 # Created by: Anderson Brito
 # Email: andersonfbrito@gmail.com
 # Release date: 2021-01-19
-# Last update: 2021-01-21
+# Last update: 2021-04-28
 
 import pandas as pd
 import argparse
@@ -48,11 +48,6 @@ if __name__ == '__main__':
 
     # Extra metadata
     dfG = pd.read_csv(metadata2, encoding='utf-8', sep=separator2, dtype='str')
-
-    # list_columns = [col for col in dfG.columns.to_list() if col in dfN.columns.to_list()]  # list of columns in common
-    # list_columns = list(set(dfG.columns.to_list() + dfN.columns.to_list()))
-    # print(list_columns)
-    # dfG = dfG[list_columns]
 
     # merge frames
     frames = [dfN, dfG]
