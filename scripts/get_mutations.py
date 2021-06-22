@@ -3,7 +3,7 @@
 # Created by: Anderson Brito
 # Email: andersonfbrito@gmail.com
 # Release date: 2020-12-16
-# Last update: 2020-12-16
+# Last update: 2021-06-22
 
 from Bio import SeqIO
 import re
@@ -17,10 +17,11 @@ import pandas as pd
 import sys
 import argparse
 
+pd.set_option('display.max_columns', 500)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
-        description="Filter nextstrain metadata files re-formmating and exporting only selected lines",
+        description="Search for genetic changes and potential sequencing errors.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     parser.add_argument("--input", required=True, help="FASTA file with genome alignment")
@@ -51,15 +52,14 @@ if __name__ == '__main__':
         ignore = [col.strip() for col in ignore_list[0].split()]
 
 
-    # alignment = path +'aligned.fasta'
-    # reference_file = path + 'reference.gb'
-    # annotation = SeqIO.read(path + reference_file, "genbank") # annotation file
+    # path = "/Users/anderson/GLab Dropbox/Anderson Brito/projects/ncov/ncov_impacc/nextstrain/2021-05-17_update_pipeline/"
+    # alignment = path + 'output_files/sequences/aligned.fasta'
+    # reference_file = path + 'input_files/reference.gb'
+    # annotation = SeqIO.read(reference_file, "genbank") # annotation file
     # ref_genome = 'Wuhan/Hu-1/2019'
-    # export_only = []
+    # export_only = ['nonstop', 'nonsense', 'frameshift']
     # ignore = []
     # output = path + 'variants.tsv'
-
-    pd.set_option('display.max_columns', 500)
 
 
     """ ANNOTATIONS """
@@ -228,7 +228,7 @@ if __name__ == '__main__':
         if orf not in exon_end:
             exon_end[orf] = 0
         print('\n*', orf, sense, coord)
-        l = dfCodons[column].to_list()
+        l = dfCodons[column].tolist()
         list_codons = list(map(list, zip(*l)))
         for pos, codon_set in enumerate(list_codons):
             # print(pos, codon_set)
@@ -259,18 +259,18 @@ if __name__ == '__main__':
                         var_aa = get_aa(codon)
                         if ref_codon != codon: # check if codons are identical
                             if '*' in var_aa: # stop codon
-                                mut_name = 'p.' + ref_aa + str(aa_pos) + var_aa
+                                mut_name = orf + ':' + ref_aa + str(aa_pos) + var_aa
                                 mut_type = 'nonsense'
                             else:
                                 if ref_aa != var_aa:
-                                    mut_name = 'p.' + ref_aa + str(aa_pos) + var_aa
+                                    mut_name = orf + ':' + ref_aa + str(aa_pos) + var_aa
                                     if '*' in ref_aa:
                                         mut_type = 'nonstop'
                                     else:
                                         mut_type = 'nonsynonymous'
                                         g_score = grantham_matrix[str(ref_aa + '_' + var_aa)]
                                 else:
-                                    mut_name = 'c.' + str(start_nucpos) + ref_codon + '>' + codon
+                                    mut_name = orf + ':' + str(start_nucpos) + ref_codon + '>' + codon
                                     mut_type = 'synonymous'
                                     g_score = 0
                             line = [genome, orf, sense, str(start_nucpos) + '..' + str(end_nucpos), mut_name,

@@ -7,17 +7,19 @@ options = rules.options.params
 # Define file names
 rule files:
 	params:
-		sequence_dataset = "input_files/gisaid_hcov-19.fasta",
+		sequence_dataset = "input_files/provision.json",
 		new_genomes = "input_files/genome_sequences.fasta",
-		aligned = "input_files/aligned.fasta",
 		metadata_gisaid = "input_files/metadata_nextstrain.tsv",
 		corelab_metadata = "input_files/metadata_impacc.csv",
 		sample_metadata = "input_files/impacc-virology-clin-sample.csv",
 		patient_metadata = "input_files/impacc-virology-clin-individ.csv",
 		batch_layout = "input_files/batch_layout.csv",
-		reference = "config/reference.gb",
+		reference = "config/reference_seq.fasta",
+		annotation = "config/reference.gb",
+		genemap = "config/genemap.gff",
 		refgenome_size = "29903",
 		max_missing = "30"
+
 
 
 files = rules.files.params
@@ -34,7 +36,6 @@ rule lineages:
 		metadata = files.metadata_gisaid
 	params:
 		download_file = "yes",
-		howmany = 1
 	output:
 		list = "output_files/sequences/rep_genomes.txt",
 		base_dataset = "output_files/sequences/base_dataset.fasta",
@@ -43,20 +44,19 @@ rule lineages:
 		"""
 		python3 scripts/get_lineage_reps.py \
 			--download {params.download_file} \
-			--howmany {params.howmany} \
 			--output {output.list}
 		
 		echo Wuhan/Hu-1/2019 >> {output.list}
 		echo Wuhan/WH01/2019 >> {output.list}
 		
-		python3 scripts/seqtree_handler.py \
+		python3 scripts/masterkey.py \
 			--input {input.genomes} \
-			--format fasta \
+			--format json \
 			--action keep \
 			--list {output.list} \
 			--output {output.base_dataset}
 		
-		python3 scripts/seqtree_handler.py \
+		python3 scripts/masterkey.py \
 			--input {input.metadata} \
 			--format tsv \
 			--action keep \
@@ -66,6 +66,7 @@ rule lineages:
 
 		mv pangolin_lineages.csv output_files/pangolin_lineages.csv
 		"""
+
 
 
 rule filter_coverage:
@@ -96,13 +97,14 @@ rule filter_coverage:
 			--output2 {output.rename}
 			
 		
-		python3 scripts/seqtree_handler.py \
+		python3 scripts/masterkey.py \
 			--input {input.genomes} \
 			--format fasta \
 			--action rename \
 			--list {output.rename} \
 			--output {output.new_sequences}	
 		"""
+
 
 
 rule inspect_metadata:
@@ -121,7 +123,7 @@ rule inspect_metadata:
 	params:
 		index = "sample_id"
 	output:
-		sample_metadata = "output_files/assured_data/metadata.tsv",
+		sample_metadata = "output_files/assured_data/sample_metadata.tsv",
 		matrix = "output_files/qa/qa_matrix2.tsv",
 		rename = "output_files/sequences/rename2.tsv"
 	shell:
@@ -136,8 +138,8 @@ rule inspect_metadata:
 			--output1 {output.sample_metadata} \
 			--output2 {output.matrix} \
 			--output3 {output.rename}
-		
 		"""
+
 
 
 rule multifasta:
@@ -148,35 +150,27 @@ rule multifasta:
 	input:
 		base_dataset = "output_files/sequences/base_dataset.fasta",
 		new_genomes = "output_files/sequences/renamed_genomes.fasta",
-		qamatrix = rules.inspect_metadata.output.matrix,
-		rename_file = rules.inspect_metadata.output.rename
+		qamatrix = rules.inspect_metadata.output.matrix
 	params:
 		format = "fasta"
 	output:
 		list_seqs = "output_files/sequences/full_genomes_list.txt",
 		filtered_seqs = "output_files/sequences/filtered_seqs.fasta",
-		ren_sequences = "output_files/sequences/renamed_seqs.fasta",
-		combined_seqs = "output_files/sequences/sequences.fasta"
+		combined_seqs = "output_files/sequences/quality_sequences.fasta"
 	shell:
 		"""
 		grep -v FAIL {input.qamatrix} | cut -d$'\t' -f 1 | sed -e 1d > {output.list_seqs}
 
-		python3 scripts/seqtree_handler.py \
+		python3 scripts/masterkey.py \
 			--input {input.new_genomes} \
 			--format {params.format} \
 			--action keep \
 			--list {output.list_seqs} \
 			--output {output.filtered_seqs}
-		
-		python3 scripts/seqtree_handler.py \
-			--input {output.filtered_seqs} \
-			--format {params.format} \
-			--action rename \
-			--list {input.rename_file} \
-			--output {output.ren_sequences}	
 
-		cat {input.base_dataset} {output.ren_sequences} > {output.combined_seqs}
+		cat {input.base_dataset} {output.filtered_seqs} > {output.combined_seqs}
 		"""
+
 
 
 rule combine_metadata:
@@ -199,7 +193,7 @@ rule combine_metadata:
 
 
 
-## Aligning the sequences using MAFFT
+### Aligning the sequences using nextalign
 rule align:
 	message:
 		"""
@@ -208,23 +202,84 @@ rule align:
 		"""
 	input:
 		sequences = rules.multifasta.output.combined_seqs,
-		aligned = files.aligned,
+		map = files.genemap,
 		reference = files.reference
 	params:
 		threads = options.threads
 	output:
-		alignment = "output_files/sequences/aligned.fasta"
+		alignment = "output_files/sequences/aligned.fasta",
+		insertions = "output_files/sequences/insertions.csv"
 	shell:
 		"""
-		augur align \
+		scripts/nextalign-MacOS-x86_64 \
 			--sequences {input.sequences} \
-			--existing-alignment {files.aligned} \
-			--reference-sequence {input.reference} \
-			--nthreads {params.threads} \
-			--output {output.alignment} \
-			--remove-reference \
-			--debug
+			--reference {input.reference} \
+			--genemap {input.map} \
+			--genes E,M,N,ORF10,ORF14,ORF1a,ORF1b,ORF3a,ORF6,ORF7a,ORF7b,ORF8,ORF9b,S \
+			--output-dir output_files/sequences/ \
+			--output-basename nextalign
+		
+		mv output_files/sequences/nextalign.aligned.fasta {output.alignment}
+		mv output_files/sequences/nextalign.insertions.csv {output.insertions}
 		"""
+
+
+
+### Detect genetic changes and potential sequencing errors
+rule mutations:
+	message:
+		"""
+		Extract mutations from multiple sequence alignment
+		"""
+	input:
+		alignment = rules.align.output.alignment,
+		annotation = files.annotation,
+		rename_file = rules.inspect_metadata.output.rename,
+		qamatrix2 = rules.inspect_metadata.output.matrix,
+		insertions = rules.align.output.insertions
+	params:
+		index = "sample_id",
+		format = "fasta"
+	output:
+		list = "output_files/sequences/listseqs.txt",
+		corelab_alignment = "output_files/sequences/corelab_aligned.fasta",
+		mutations = "output_files/sequences/mutations.tsv",
+		matrix = "output_files/qa/qa_matrix3.tsv",
+		ren_sequences = "output_files/sequences/renamed_seqs.fasta"
+	shell:
+		"""
+		cut -d$'\t' -f 1 {input.rename_file} > {output.list}
+		echo Wuhan/Hu-1/2019 >> {output.list}
+		
+		python3 scripts/masterkey.py \
+			--input {input.alignment} \
+			--format {params.format} \
+			--action keep \
+			--list {output.list} \
+			--output {output.corelab_alignment}
+
+		python3 scripts/get_mutations.py \
+			--input {output.corelab_alignment} \
+			--annotation {input.annotation} \
+			--ref-name "Wuhan/Hu-1/2019" \
+			--ignore ambiguity synonymous \
+			--output {output.mutations}
+			
+		python3 scripts/inspect_mutations.py \
+			--matrix {input.qamatrix2} \
+			--index {params.index} \
+			--mutations {output.mutations} \
+			--insertions {input.insertions} \
+			--output {output.matrix}
+		
+		python3 scripts/masterkey.py \
+			--input {input.alignment} \
+			--format {params.format} \
+			--action rename \
+			--list {input.rename_file} \
+			--output {output.ren_sequences}	
+		"""
+
 
 
 ### Masking alignment sites
@@ -237,7 +292,7 @@ rule mask:
 		  - masking other sites: {params.mask_sites}
 		"""
 	input:
-		alignment = rules.align.output.alignment
+		alignment = rules.mutations.output.ren_sequences
 	params:
 		mask_from_beginning = 55,
 		mask_from_end = 100,
@@ -255,6 +310,7 @@ rule mask:
 		"""
 
 
+
 ### Inferring Maximum Likelihood tree using the default software (IQTree)
 
 rule tree:
@@ -267,12 +323,12 @@ rule tree:
 		tree = "output_files/tree/tree_raw.nwk"
 	shell:
 		"""
-		
 		augur tree \
 			--alignment {input.alignment} \
 			--nthreads {params.threads} \
 			--output {output.tree}
 		"""
+
 
 
 ### Running TreeTime to estimate time for ancestral genomes
@@ -286,7 +342,7 @@ rule root2tip:
 		"""
 	input:
 		tree = rules.tree.output.tree,
-		alignment = rules.align.output.alignment,
+		alignment = rules.mask.output.alignment,
 		metadata = rules.combine_metadata.output.combined_metadata
 	params:
 		clock_rate = 0.0008,
@@ -317,6 +373,7 @@ rule root2tip:
 		"""
 
 
+
 rule assurance:
 	message:
 		"""
@@ -325,34 +382,25 @@ rule assurance:
 		  - move sequence and metadata files to final directory
 		"""
 	input:
-		qamatrix2 = rules.inspect_metadata.output.matrix,
+		qamatrix3 = rules.mutations.output.matrix,
 		outliers = rules.root2tip.output.outliers,
 		lineage_seqs = "output_files/sequences/rep_genomes.txt",
-		genomes = rules.multifasta.output.filtered_seqs,
-		rename_file = rules.inspect_metadata.output.rename
+		genomes = rules.multifasta.output.filtered_seqs
 	params:
 		index = "sample_id",
 		format = "fasta"
 	output:
 		qamatrix = "output_files/assured_data/qa_matrix.tsv",
-		quality_seqs = "output_files/sequences/quality_genomes.fasta",
-		final_seqs = "output_files/assured_data/sequences.fasta",
+		quality_seqs = "output_files/sequences/sequences.fasta"
 	shell:
 		"""
 		python3 scripts/get_QAmatrix.py \
-			--matrix {input.qamatrix2} \
+			--matrix {input.qamatrix3} \
 			--genomes {input.genomes} \
 			--outliers {input.outliers} \
 			--index {params.index} \
 			--output1 {output.qamatrix} \
 			--output2 {output.quality_seqs}
-
-		python3 scripts/seqtree_handler.py \
-			--input {output.quality_seqs} \
-			--format {params.format} \
-			--action rename \
-			--list {input.rename_file} \
-			--output {output.final_seqs}	
 		"""
 
 
