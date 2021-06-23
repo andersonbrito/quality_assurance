@@ -42,21 +42,21 @@ rule lineages:
 		base_metadata = "output_files/metadata/base_metadata.tsv"
 	shell:
 		"""
-		python3 scripts/get_lineage_reps.py \
+		python scripts/get_lineage_reps.py \
 			--download {params.download_file} \
 			--output {output.list}
 		
 		echo Wuhan/Hu-1/2019 >> {output.list}
 		echo Wuhan/WH01/2019 >> {output.list}
 		
-		python3 scripts/masterkey.py \
+		python scripts/masterkey.py \
 			--input {input.genomes} \
 			--format json \
 			--action keep \
 			--list {output.list} \
 			--output {output.base_dataset}
 		
-		python3 scripts/masterkey.py \
+		python scripts/masterkey.py \
 			--input {input.metadata} \
 			--format tsv \
 			--action keep \
@@ -88,7 +88,7 @@ rule filter_coverage:
 		new_sequences = "output_files/sequences/renamed_genomes.fasta"
 	shell:
 		"""
-		python3 scripts/filter_by_coverage.py \
+		python scripts/filter_by_coverage.py \
 			--genomes {input.genomes} \
 			--index {params.index} \
 			--refgenome-size {params.size} \
@@ -97,7 +97,7 @@ rule filter_coverage:
 			--output2 {output.rename}
 			
 		
-		python3 scripts/masterkey.py \
+		python scripts/masterkey.py \
 			--input {input.genomes} \
 			--format fasta \
 			--action rename \
@@ -123,19 +123,19 @@ rule inspect_metadata:
 	params:
 		index = "sample_id"
 	output:
-		sample_metadata = "output_files/assured_data/sample_metadata.tsv",
+		metadata = "output_files/metadata/metadata1.tsv",
 		matrix = "output_files/qa/qa_matrix2.tsv",
 		rename = "output_files/sequences/rename2.tsv"
 	shell:
 		"""
-		python3 scripts/inspect_metadata.py \
+		python scripts/inspect_metadata.py \
 			--metadata1 {input.metadata1} \
 			--metadata2 {input.metadata2} \
 			--metadata3 {input.metadata3} \
 			--batch {input.batch} \
 			--index {params.index} \
 			--matrix {input.matrix1} \
-			--output1 {output.sample_metadata} \
+			--output1 {output.metadata} \
 			--output2 {output.matrix} \
 			--output3 {output.rename}
 		"""
@@ -161,7 +161,7 @@ rule multifasta:
 		"""
 		grep -v FAIL {input.qamatrix} | cut -d$'\t' -f 1 | sed -e 1d > {output.list_seqs}
 
-		python3 scripts/masterkey.py \
+		python scripts/masterkey.py \
 			--input {input.new_genomes} \
 			--format {params.format} \
 			--action keep \
@@ -180,12 +180,12 @@ rule combine_metadata:
 		"""
 	input:
 		base_metadata = "output_files/metadata/base_metadata.tsv",
-		sample_metadata = rules.inspect_metadata.output.sample_metadata
+		sample_metadata = rules.inspect_metadata.output.metadata
 	output:
 		combined_metadata = "output_files/metadata/combined_metadata.tsv"
 	shell:
 		"""
-		python3 scripts/metadata_merger.py \
+		python scripts/metadata_merger.py \
 			--metadata1 {input.base_metadata} \
 			--metadata2 {input.sample_metadata} \
 			--output {output.combined_metadata}
@@ -251,33 +251,67 @@ rule mutations:
 		cut -d$'\t' -f 1 {input.rename_file} > {output.list}
 		echo Wuhan/Hu-1/2019 >> {output.list}
 		
-		python3 scripts/masterkey.py \
+		python scripts/masterkey.py \
 			--input {input.alignment} \
 			--format {params.format} \
 			--action keep \
 			--list {output.list} \
 			--output {output.corelab_alignment}
 
-		python3 scripts/get_mutations.py \
+		python scripts/get_mutations.py \
 			--input {output.corelab_alignment} \
 			--annotation {input.annotation} \
 			--ref-name "Wuhan/Hu-1/2019" \
 			--ignore ambiguity synonymous \
 			--output {output.mutations}
 			
-		python3 scripts/inspect_mutations.py \
+		python scripts/inspect_mutations.py \
 			--matrix {input.qamatrix2} \
 			--index {params.index} \
 			--mutations {output.mutations} \
 			--insertions {input.insertions} \
 			--output {output.matrix}
 		
-		python3 scripts/masterkey.py \
+		python scripts/masterkey.py \
 			--input {input.alignment} \
 			--format {params.format} \
 			--action rename \
 			--list {input.rename_file} \
 			--output {output.ren_sequences}	
+		"""
+
+
+
+rule pangolin:
+	message:
+		"""
+		Assign pango lineages to core lab sequences
+		"""
+	input:
+		corelab_seq = rules.mutations.output.corelab_alignment,
+		metadata = rules.inspect_metadata.output.metadata,
+		qamatrix3 = rules.mutations.output.matrix
+	params:
+		threads = options.threads,
+		index = "sample_id"
+	output:
+		report = "output_files/metadata/lineage_report.csv",
+		matrix = "output_files/qa/qa_matrix4.tsv",
+		metadata = "output_files/assured_data/metadata.tsv"
+	shell:
+		"""
+		pangolin \
+			{input.corelab_seq} \
+			--threads {params.threads} \
+			--outfile {output.report}
+		
+		python scripts/inspect_lineages.py \
+			--lineages {output.report} \
+			--metadata {input.metadata} \
+			--matrix {input.qamatrix3} \
+			--index {params.index} \
+			--output1 {output.matrix} \
+			--output2 {output.metadata}
 		"""
 
 
@@ -301,7 +335,7 @@ rule mask:
 		alignment = "output_files/tree/masked_alignment.fasta"
 	shell:
 		"""
-		python3 scripts/mask-alignment.py \
+		python scripts/mask-alignment.py \
 			--alignment {input.alignment} \
 			--mask-from-beginning {params.mask_from_beginning} \
 			--mask-from-end {params.mask_from_end} \
@@ -369,6 +403,7 @@ rule root2tip:
 			--verbose 1 \
 			--outdir {params.outdir}
 		
+		echo "--" >> {params.outdir}/dates.tsv
 		grep "\-\-" {params.outdir}/dates.tsv | cut -d$'\t' -f 1 > {output.outliers}
 		"""
 
@@ -382,7 +417,7 @@ rule assurance:
 		  - move sequence and metadata files to final directory
 		"""
 	input:
-		qamatrix3 = rules.mutations.output.matrix,
+		qamatrix4 = rules.pangolin.output.matrix,
 		outliers = rules.root2tip.output.outliers,
 		lineage_seqs = "output_files/sequences/rep_genomes.txt",
 		genomes = rules.multifasta.output.filtered_seqs
@@ -394,8 +429,8 @@ rule assurance:
 		quality_seqs = "output_files/sequences/sequences.fasta"
 	shell:
 		"""
-		python3 scripts/get_QAmatrix.py \
-			--matrix {input.qamatrix3} \
+		python scripts/get_QAmatrix.py \
+			--matrix {input.qamatrix4} \
 			--genomes {input.genomes} \
 			--outliers {input.outliers} \
 			--index {params.index} \

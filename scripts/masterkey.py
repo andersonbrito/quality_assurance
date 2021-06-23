@@ -203,6 +203,7 @@ if __name__ == '__main__':
                             print(str(count) + '. ' + header)
                             entry = ">" + header + "\n" + seq.upper() + "\n"
                             outfile.write(entry)
+                            found.append(header)
                         count += 1
                         if count % 10000 == 0:
                             print(count)
