@@ -58,11 +58,11 @@ if __name__ == '__main__':
         if str(file).split('.')[-1] == 'tsv':
             separator = '\t'
             df = pd.read_csv(file, encoding='utf-8', sep=separator, dtype='str')
-            df = df.rename(columns={'guspec': index, 'txtpid': 'participant_id', 'visitnum': 'visit_num'})
+            df = df.rename(columns={'guspec': index, 'Global_Spec_ID': index, 'txtpid': 'participant_id', 'Subject_ID': 'participant_id', 'visitnum': 'visit_num', 'Visit_Number':'visit_num', 'PDB_Extract_ID': 'core_specific_ID'})
         elif str(file).split('.')[-1] == 'csv':
             separator = ','
             df = pd.read_csv(file, encoding='utf-8', sep=separator, dtype='str')
-            df = df.rename(columns={'guspec': index, 'txtpid': 'participant_id', 'visitnum': 'visit_num'})
+            df = df.rename(columns={'guspec': index, 'Global_Spec_ID': index, 'txtpid': 'participant_id', 'Subject_ID': 'participant_id', 'visitnum': 'visit_num', 'Visit_Number':'visit_num', 'PDB_Extract_ID': 'core_specific_ID'})
         elif str(file).split('.')[-1] in ['xls', 'xlsx']:
             df = pd.read_excel(file, index_col=None, header=0, sheet_name=0, dtype='str')
             df.fillna('', inplace=True)

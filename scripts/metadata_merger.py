@@ -16,11 +16,13 @@ if __name__ == '__main__':
     )
     parser.add_argument("--metadata1", required=True, help="Metadata file from nextstrain")
     parser.add_argument("--metadata2", required=True, help="Metadata file from GISAID")
+    parser.add_argument("--index", required=True, type=str, help="Column with unique identifiers")
     parser.add_argument("--output", required=True, help="Merged metadata file")
     args = parser.parse_args()
 
     metadata1 = args.metadata1
     metadata2 = args.metadata2
+    index = args.index
     output = args.output
 
     # path = '/Users/anderson/GLab Dropbox/Anderson Brito/projects/ncov/ncov_impacc/nextstrain/run8_20210402_impacc/'
@@ -53,7 +55,7 @@ if __name__ == '__main__':
     frames = [dfN, dfG]
     result = pd.concat(frames)
     result.fillna('', inplace=True)
-    result = result.drop_duplicates(subset=['strain'])
+    result = result.drop_duplicates(subset=[index])
     result.to_csv(output, sep='\t', index=False)
 
     print('\nTSV metadata files successfully merged.\n')

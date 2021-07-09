@@ -7,66 +7,77 @@ options = rules.options.params
 # Define file names
 rule files:
 	params:
-		sequence_dataset = "input_files/provision.json",
-		new_genomes = "input_files/genome_sequences.fasta",
+		sequence_dataset = "input_files/provision.fasta",
+		new_genomes = "input_files/genomes.fasta",
 		metadata_gisaid = "input_files/metadata_nextstrain.tsv",
-		corelab_metadata = "input_files/metadata_impacc.csv",
-		sample_metadata = "input_files/impacc-virology-clin-sample.csv",
-		patient_metadata = "input_files/impacc-virology-clin-individ.csv",
+		corelab_metadata = "input_files/metadata_corelab.tsv",
+		sample_metadata = "input_files/impacc-clin-sample.csv",
+		patient_metadata = "input_files/impacc-clin-individ.csv",
 		batch_layout = "input_files/batch_layout.csv",
 		reference = "config/reference_seq.fasta",
-		annotation = "config/reference.gb",
+		annotation = "config/sequence.gb",
 		genemap = "config/genemap.gff",
 		refgenome_size = "29903",
 		max_missing = "30"
 
 
-
 files = rules.files.params
 
-rule lineages:
+
+
+rule lineages_rep:
 	message:
 		"""
 		Getting list of representative genomes per pangolin lineage:
 		- Pick one representative genome per lineage
 		- Export list with sequence names
 		"""
-	input:
-		genomes = files.sequence_dataset,
-		metadata = files.metadata_gisaid
 	params:
 		download_file = "yes",
 	output:
 		list = "output_files/sequences/rep_genomes.txt",
-		base_dataset = "output_files/sequences/base_dataset.fasta",
-		base_metadata = "output_files/metadata/base_metadata.tsv"
 	shell:
 		"""
-		python scripts/get_lineage_reps.py \
+		python.nextstrain scripts/get_lineage_reps.py \
 			--download {params.download_file} \
 			--output {output.list}
 		
 		echo Wuhan/Hu-1/2019 >> {output.list}
 		echo Wuhan/WH01/2019 >> {output.list}
-		
-		python scripts/masterkey.py \
+		"""
+
+
+
+rule base_dataset:
+	message:
+		"""
+		Export base dataset with genomes and metadata
+		"""
+	input:
+		genomes = files.sequence_dataset,
+		metadata = files.metadata_gisaid,
+		list = "output_files/sequences/rep_genomes.txt"
+	output:
+		base_dataset = "output_files/sequences/base_dataset.fasta",
+		base_metadata = "output_files/metadata/base_metadata.tsv"
+	shell:
+		"""
+	
+		python.nextstrain scripts/masterkey.py \
 			--input {input.genomes} \
-			--format json \
+			--format fasta \
 			--action keep \
-			--list {output.list} \
+			--list {input.list} \
 			--output {output.base_dataset}
 		
-		python scripts/masterkey.py \
+		python.nextstrain scripts/masterkey.py \
 			--input {input.metadata} \
 			--format tsv \
 			--action keep \
 			--index strain \
-			--list {output.list} \
+			--list {input.list} \
 			--output {output.base_metadata}
-
-		mv pangolin_lineages.csv output_files/pangolin_lineages.csv
 		"""
-
 
 
 rule filter_coverage:
@@ -88,7 +99,7 @@ rule filter_coverage:
 		new_sequences = "output_files/sequences/renamed_genomes.fasta"
 	shell:
 		"""
-		python scripts/filter_by_coverage.py \
+		python.nextstrain scripts/filter_by_coverage.py \
 			--genomes {input.genomes} \
 			--index {params.index} \
 			--refgenome-size {params.size} \
@@ -97,7 +108,7 @@ rule filter_coverage:
 			--output2 {output.rename}
 			
 		
-		python scripts/masterkey.py \
+		python.nextstrain scripts/masterkey.py \
 			--input {input.genomes} \
 			--format fasta \
 			--action rename \
@@ -128,7 +139,7 @@ rule inspect_metadata:
 		rename = "output_files/sequences/rename2.tsv"
 	shell:
 		"""
-		python scripts/inspect_metadata.py \
+		python.nextstrain scripts/inspect_metadata.py \
 			--metadata1 {input.metadata1} \
 			--metadata2 {input.metadata2} \
 			--metadata3 {input.metadata3} \
@@ -161,7 +172,7 @@ rule multifasta:
 		"""
 		grep -v FAIL {input.qamatrix} | cut -d$'\t' -f 1 | sed -e 1d > {output.list_seqs}
 
-		python scripts/masterkey.py \
+		python.nextstrain scripts/masterkey.py \
 			--input {input.new_genomes} \
 			--format {params.format} \
 			--action keep \
@@ -181,13 +192,16 @@ rule combine_metadata:
 	input:
 		base_metadata = "output_files/metadata/base_metadata.tsv",
 		sample_metadata = rules.inspect_metadata.output.metadata
+	params:
+		index = "strain"
 	output:
 		combined_metadata = "output_files/metadata/combined_metadata.tsv"
 	shell:
 		"""
-		python scripts/metadata_merger.py \
+		python.nextstrain scripts/metadata_merger.py \
 			--metadata1 {input.base_metadata} \
 			--metadata2 {input.sample_metadata} \
+			--index {params.index} \
 			--output {output.combined_metadata}
 		"""
 
@@ -211,7 +225,7 @@ rule align:
 		insertions = "output_files/sequences/insertions.csv"
 	shell:
 		"""
-		scripts/nextalign-MacOS-x86_64 \
+		nextalign \
 			--sequences {input.sequences} \
 			--reference {input.reference} \
 			--genemap {input.map} \
@@ -251,28 +265,28 @@ rule mutations:
 		cut -d$'\t' -f 1 {input.rename_file} > {output.list}
 		echo Wuhan/Hu-1/2019 >> {output.list}
 		
-		python scripts/masterkey.py \
+		python.nextstrain scripts/masterkey.py \
 			--input {input.alignment} \
 			--format {params.format} \
 			--action keep \
 			--list {output.list} \
 			--output {output.corelab_alignment}
 
-		python scripts/get_mutations.py \
+		python.nextstrain scripts/get_mutations.py \
 			--input {output.corelab_alignment} \
 			--annotation {input.annotation} \
 			--ref-name "Wuhan/Hu-1/2019" \
 			--ignore ambiguity synonymous \
 			--output {output.mutations}
 			
-		python scripts/inspect_mutations.py \
+		python.nextstrain scripts/inspect_mutations.py \
 			--matrix {input.qamatrix2} \
 			--index {params.index} \
 			--mutations {output.mutations} \
 			--insertions {input.insertions} \
 			--output {output.matrix}
 		
-		python scripts/masterkey.py \
+		python.nextstrain scripts/masterkey.py \
 			--input {input.alignment} \
 			--format {params.format} \
 			--action rename \
@@ -305,7 +319,7 @@ rule pangolin:
 			--threads {params.threads} \
 			--outfile {output.report}
 		
-		python scripts/inspect_lineages.py \
+		python.nextstrain scripts/inspect_lineages.py \
 			--lineages {output.report} \
 			--metadata {input.metadata} \
 			--matrix {input.qamatrix3} \
@@ -335,7 +349,7 @@ rule mask:
 		alignment = "output_files/tree/masked_alignment.fasta"
 	shell:
 		"""
-		python scripts/mask-alignment.py \
+		python.nextstrain scripts/mask-alignment.py \
 			--alignment {input.alignment} \
 			--mask-from-beginning {params.mask_from_beginning} \
 			--mask-from-end {params.mask_from_end} \
@@ -429,7 +443,7 @@ rule assurance:
 		quality_seqs = "output_files/sequences/sequences.fasta"
 	shell:
 		"""
-		python scripts/get_QAmatrix.py \
+		python.nextstrain scripts/get_QAmatrix.py \
 			--matrix {input.qamatrix4} \
 			--genomes {input.genomes} \
 			--outliers {input.outliers} \

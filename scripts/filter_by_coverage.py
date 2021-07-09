@@ -46,6 +46,7 @@ if __name__ == '__main__':
         id, seq = fasta.description, fasta.seq
 
         fullid = id
+        print(id)
         visitnum  = id.split('|')[1].split(':')[1].split('_')[2]
         txtpid = id.split('|')[1].split(':')[1].split('_')[1]
         seqid = id.split('|')[0].split(':')[1].split('.')[0]
