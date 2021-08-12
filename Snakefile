@@ -7,12 +7,12 @@ options = rules.options.params
 # Define file names
 rule files:
 	params:
-		sequence_dataset = "input_files/provision.fasta",
+		sequence_dataset = "input_files/provision.json",
 		new_genomes = "input_files/genomes.fasta",
 		metadata_gisaid = "input_files/metadata_nextstrain.tsv",
-		corelab_metadata = "input_files/metadata_corelab.tsv",
-		sample_metadata = "input_files/impacc-clin-sample.csv",
-		patient_metadata = "input_files/impacc-clin-individ.csv",
+		corelab_metadata = "input_files/metadata_corelab.csv",
+		sample_metadata = "input_files/impacc-virology-clin-sample.csv",
+		patient_metadata = "input_files/impacc-virology-clin-individ.csv",
 		batch_layout = "input_files/batch_layout.csv",
 		reference = "config/reference_seq.fasta",
 		annotation = "config/sequence.gb",
@@ -65,7 +65,7 @@ rule base_dataset:
 	
 		python.nextstrain scripts/masterkey.py \
 			--input {input.genomes} \
-			--format fasta \
+			--format json \
 			--action keep \
 			--list {input.list} \
 			--output {output.base_dataset}

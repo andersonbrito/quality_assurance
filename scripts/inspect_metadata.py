@@ -39,7 +39,7 @@ if __name__ == '__main__':
     output3 = args.output3
 
 
-    # path = "/Users/anderson/GLab Dropbox/Anderson Brito/projects/ncov/ncov_impacc/nextstrain/template/"
+    # path = "/Users/anderson/GLab Dropbox/Anderson Brito/projects/ncov/ncov_impacc/nextstrain/qa_phase2_20210730/"
     # cl_metadata = path + 'input_files/metadata_impacc.csv'
     # cs_metadata = path + 'input_files/impacc-virology-clin-sample.csv'
     # ci_metadata = path + 'input_files/impacc-virology-clin-individ.csv'
@@ -110,14 +110,10 @@ if __name__ == '__main__':
     dfCI['region'] = 'North America'
     dfCI['country'] = 'USA'
     dfCI['division'] = dfCI['enrollment_site'].apply(lambda x: enrollment_state[x] if x in enrollment_state else '')
+    dfCI['originating_lab'] = dfCI['enrollment_site'].apply(lambda x: 'IMPACC (' + x + ')')
+    dfCI['submitting_lab'] = 'IMPACC'
 
 
-    # add location
-    def variant_category(site):
-        state = ''
-        if site in enrollment_state:
-            state = enrollment_state[site]
-        return state
 
     # melt metadata files
     def melt_metadata(dataframe1, dataframe2, extra_columns):
@@ -142,7 +138,7 @@ if __name__ == '__main__':
     # redefine indexes, round 2
     dfL = dfL.set_index('participant_id')
     dfCI = dfCI.set_index('participant_id')
-    dfL = melt_metadata(dfL, dfCI, ['region', 'country', 'division', 'enrollment_site', 'admit_age', 'sex', 'race', 'ethnicity', 'death'])
+    dfL = melt_metadata(dfL, dfCI, ['region', 'country', 'division', 'enrollment_site', 'originating_lab', 'submitting_lab', 'admit_age', 'sex', 'race', 'ethnicity', 'death'])
 
 
     # Load QA matrix
