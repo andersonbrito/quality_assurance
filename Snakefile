@@ -7,7 +7,7 @@ options = rules.options.params
 # Define file names
 rule files:
 	params:
-		sequence_dataset = "input_files/provision.json",
+		sequence_dataset = "input_files/provision.fasta",
 		new_genomes = "input_files/genomes.fasta",
 		metadata_gisaid = "input_files/metadata_nextstrain.tsv",
 		corelab_metadata = "input_files/metadata_corelab.csv",
@@ -65,7 +65,7 @@ rule base_dataset:
 	
 		python.nextstrain scripts/masterkey.py \
 			--input {input.genomes} \
-			--format json \
+			--format fasta \
 			--action keep \
 			--list {input.list} \
 			--output {output.base_dataset}
@@ -161,7 +161,7 @@ rule multifasta:
 	input:
 		base_dataset = "output_files/sequences/base_dataset.fasta",
 		new_genomes = "output_files/sequences/renamed_genomes.fasta",
-		qamatrix = rules.inspect_metadata.output.matrix
+		qamatrix = "output_files/qa/qa_matrix2.tsv"
 	params:
 		format = "fasta"
 	output:
