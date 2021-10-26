@@ -7,10 +7,10 @@ options = rules.options.params
 # Define file names
 rule files:
 	params:
-		sequence_dataset = "input_files/provision.fasta",
+		sequence_dataset = "input_files/gisaid_hcov-19.fasta",
 		new_genomes = "input_files/genomes.fasta",
 		metadata_gisaid = "input_files/metadata_nextstrain.tsv",
-		corelab_metadata = "input_files/metadata_corelab.csv",
+		corelab_metadata = "input_files/metadata_corelab.tsv",
 		sample_metadata = "input_files/impacc-virology-clin-sample.csv",
 		patient_metadata = "input_files/impacc-virology-clin-individ.csv",
 		batch_layout = "input_files/batch_layout.csv",
@@ -54,8 +54,8 @@ rule base_dataset:
 		Export base dataset with genomes and metadata
 		"""
 	input:
-		genomes = files.sequence_dataset,
-		metadata = files.metadata_gisaid,
+		genomes = "input_files/gisaid_hcov-19.fasta",
+		metadata = "input_files/metadata_nextstrain.tsv",
 		list = "output_files/sequences/rep_genomes.txt"
 	output:
 		base_dataset = "output_files/sequences/base_dataset.fasta",
@@ -171,7 +171,7 @@ rule multifasta:
 	shell:
 		"""
 		grep -v FAIL {input.qamatrix} | cut -d$'\t' -f 1 | sed -e 1d > {output.list_seqs}
-
+n
 		python.nextstrain scripts/masterkey.py \
 			--input {input.new_genomes} \
 			--format {params.format} \

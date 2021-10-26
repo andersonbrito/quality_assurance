@@ -133,7 +133,7 @@ if __name__ == '__main__':
     # redefine indexes, round 1
     dfL = dfL.set_index(index)
     dfCS = dfCS.set_index(index)
-    dfL = melt_metadata(dfL, dfCS, ['date', 'trajectory_group'])
+    dfL = melt_metadata(dfL, dfCS, ['date'])
 
     # redefine indexes, round 2
     dfL = dfL.set_index('participant_id')

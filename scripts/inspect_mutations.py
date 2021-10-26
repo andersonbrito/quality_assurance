@@ -101,7 +101,8 @@ if __name__ == '__main__':
             else:
                 status = 'PASS'
         return status
-
+    
+    dic_errors = {}
     df = df.set_index(index)
     df['mutation_status'] = df.index.map(failed)
     df.reset_index(inplace=True)
