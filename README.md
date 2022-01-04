@@ -16,9 +16,7 @@ This Snakemake pipeline performs a series of quality assurance steps. It include
 # Input files
 
 
-* Fasta file containing all sampled genomes
-* Metadata file containing at least sample names ("`strain`"), `date`, and geographic locations (`country`, `division`, etc).
-* Matrix of daily case counts per geographic location (as listed in the metadata)
+* dd
 
 
 # Installing and running the pipeline
@@ -41,44 +39,51 @@ __Figure 1. Workflow Overview__
 
 ## Filtering sequences by genome coverage
 
-(*) This is a checkpoint step. Here, genomes with more than 30% of sites with ambiguities (non-ATCG bases) will be flagged as low coverage. The quality assurance matrix with show the columns: `seq_coverage` (with the proportion of ATGC sites) and `seq_coverage_status` (with `PASS` or `FAIL`). In this step, long sequence headers are renamed to show only `sample_id`:
+(*) `filter_coverage` is a checkpoint step. Here, genomes with more than 30% of sites with ambiguities (non-ATCG bases) will be flagged as low coverage. The quality assurance matrix with show the columns: `seq_coverage` (with the proportion of ATGC sites) and `seq_coverage_status` (with `PASS` or `FAIL`). In this step, long sequence headers are renamed to show only `sample_id`:
 
 	`Sequence_Identifier:IM_15202.aid_14729.SARS-CoV-2|External_Sample_Identifier:0865-0071KD00-001_015-0015_1` >>> `0865-0071KD00-001`
 
 
 ## Generating list of representative genomes from SARS-CoV-2 lineages
 
-This step generates a list of 500 genomes from distinct, randomly selected SARS-CoV-2 lineages, and two ancestral genomes. These genomes will be used in the `root2tip` analysis step. Genome strain names are sampled from the following repository:
+`lineages_rep` generates a list of 500 genomes from distinct, randomly selected SARS-CoV-2 lineages, and two ancestral genomes. These genomes will be used in the `root2tip` analysis step. Genome strain names are sampled from the following repository:
 
 	https://raw.githubusercontent.com/cov-lineages/pangoLEARN/master/pangoLEARN/data/lineages.downsample.csv
 
 
 ## Inspecting metadata files
 
-(*) This is a checkpoint step. Here, the following files are inspected to detect samples with missing metadata:
+(*) `inspect_metadata` is a checkpoint step. Here, the following files are inspected to detect samples with missing metadata:
+
+- `metadata_corelab.tsv` (metadata file from core lab)
+- `impacc-virology-clin-sample.csv` (sample metadata)
+- `impacc-virology-clin-individ.csv` (patient metadata)
+- `batch_layout.csv` (batch layout file)
 
 
-## base_dataset
+## Creating base dataset
+
+`base_dataset` prepares the fasta and metadata files required to proceed with the next steps. For this step, a file `gisaid_hcov-19.fasta` containing all the genomes and a `metadata_nextstrain.tsv` file listing the metadata of those genomes must be provided. These files can be downloaded from gisaid.org, using the list of representative genomes generated under `lineages_rep` as query in the 'Search' webpage (as 'Input for the Augur pipeline').
 
 
+## Combining metadata files
+
+`combine_metadata` generates a combined metadata file, including metadata from publicly available genomes (mentioned above) and from IMPACC core labs.
 
 
-## combine_metadata
+## Creating a multifasta file
+
+`multifasta` generates a fasta file containing all sequences listed in the combined metadata file.
 
 
+## Generating MSA
 
-## multifasta
-
-
-
-## align
-
-
-
+`multifasta` generates a multiple sequence alignment (MSA) of all sequences listed in the metadata above, using `nextalign`.
 
 
 ## mutations
 
+(*) `inspect_metadata` is a checkpoint step.
 
 
 ## pangolin
