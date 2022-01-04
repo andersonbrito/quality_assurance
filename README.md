@@ -35,20 +35,26 @@ snakemake assurance
 # Pipeline overview
 
 ![alt text](https://raw.githubusercontent.com/andersonbrito/quality_assurance/master/workflow.svg "Steps of quality assurance")
+
 __Figure 1. Workflow Overview__ 
 
 
 ## Filtering sequences by genome coverage
 
 This is a checkpoint step. Here, genomes with more than 30% of sites with ambiguities (non-ATCG bases) will be flagged as low coverage. The quality assurance matrix with show the columns: `seq_coverage` (with the proportion of ATGC sites) and `seq_coverage_status` (with `PASS` or `FAIL`). In this step, long sequence headers are renamed to show only `sample_id`:
-	- Sequence_Identifier:IM_15202.aid_14729.SARS-CoV-2|External_Sample_Identifier:0865-0071KD00-001_015-0015_1 >>> 0865-0071KD00-001
+
+	- `Sequence_Identifier:IM_15202.aid_14729.SARS-CoV-2|External_Sample_Identifier:0865-0071KD00-001_015-0015_1` >>> `0865-0071KD00-001`
 
 
-## lineages_rep
+## Generating list of representative genomes from SARS-CoV-2 lineages
+
+This step generates a list of 500 genomes from distinct, randomly selected SARS-CoV-2 lineages, and two ancestral genomes. These genomes will be used in the `root2tip` analysis step. Genome strain names are sampled from the following repository:
+
+	- https://raw.githubusercontent.com/cov-lineages/pangoLEARN/master/pangoLEARN/data/lineages.downsample.csv
 
 
 
-## inspect_metadata
+## Inspecting the metadata
 
 
 
