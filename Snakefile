@@ -171,7 +171,7 @@ rule multifasta:
 	shell:
 		"""
 		grep -v FAIL {input.qamatrix} | cut -d$'\t' -f 1 | sed -e 1d > {output.list_seqs}
-n
+
 		python.nextstrain scripts/masterkey.py \
 			--input {input.new_genomes} \
 			--format {params.format} \
