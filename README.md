@@ -15,8 +15,16 @@ This Snakemake pipeline performs a series of quality assurance steps. It include
 
 # Input files
 
-
-* dd
+* gisaid_hcov-19.fasta
+* genomes.fasta
+* metadata_nextstrain.tsv
+* metadata_corelab.tsv
+* impacc-virology-clin-sample.csv
+* impacc-virology-clin-individ.csv
+* batch_layout.csv
+* reference_seq.fasta
+* sequence.gb
+* genemap.gff
 
 
 # Installing and running the pipeline
@@ -60,7 +68,7 @@ __Figure 1. Workflow Overview__
 - `impacc-virology-clin-individ.csv` (patient metadata)
 - `batch_layout.csv` (batch layout file)
 
-Samples that fail at this step are flagged with 'FAIL' under a new column `metadata_status`, which is added in the quality assurance matrix. A `missing_metadata` column will also list metadata field that caused the failure.
+Samples that fail at this step are flagged with 'FAIL' under a new column `metadata_status`, which is added in the quality assurance matrix. A `missing_metadata` column will also list metadata field that caused the failure. Likewise, columns `batch_issues` and `batch_status` are added, indicating inconsistencies in the batch layout file.
 
 
 ## Creating base dataset
@@ -88,71 +96,34 @@ Samples that fail at this step are flagged with 'FAIL' under a new column `metad
 (*) `mutations` is a checkpoint step. Here, any genetic changes leading to 'nonstop', 'nonsense', 'frameshift' mutations will be flagged as 'FAIL', representing genomes that require further inspections due to possible sequencing or assembly issues.
 
 
-## pangolin
+## Assigning pangolin lineages
+
+(*) `pangolin` is a checkpoint step. Here, core lab genomes will be assigned with pangolin lineages. Important: the software pangolin must be updated, so that the lineages recently designated can be assigned (`pangolin --update`). Visit the [pangolin website](https://cov-lineages.org/resources/pangolin/updating.html) for more information.
+
+## Masking alignment sites
+
+`mask` masks problematic sites. An updated list of sites to be masked can be provided. This [repository](https://github.com/W-L/ProblematicSites_SARS-CoV2) lists candidate sites to be masked.
+
+## Inferring a Maximum Likelihood phylogenetic tree
+
+`tree` generates a phylogenetic tree using `IQTree`.
+
+## Performing root to tip analysis
+
+(*) `root2tip` is a checkpoint step. Here, molecular clock outlier are identified, flagged with 'FAIL' under a new column `clock_status`, which is added in the quality assurance matrix.
 
 
-
-## mask
-
+## Generating final files
 
 
-## tree
-
-
-
-## root2tip
-
-
-## assurance
-
-
-
-
-
-
-## Creating case count matrix
-
-_`subsampler` can perform subsampling using epidemiological data from any geographical level (per country, per states, etc) provided daily case counts are available_
-
-* Read daily case data file
-* Convert date format to YYYY-MM-DD
-* Generate matrix of case counts, locations versus days
-
-## Creating genome matrix
-
-* Read genomic metadata file
-* Convert date format to YYYY-MM-DD
-* Generate matrix of genome counts, locations versus days
-
-
-## Aggregating genomic and epidemiological data per epiweek
-
-* Combine genomic and case counts per epidemiological week
-* Drop data from time periods outside the boundaries defined by `start_date` and `end_date`.
-
-## Correcting genomic sampling bias
-
-* Read matrices of epiweek genomic and case counts
-* Generate matrix reporting the observed sampling proportions per epiweek
-* Generate matrix reporting the sampling bias (under- and oversampling) given the baseline
-* Generate matrix with the corrected genome count per week, given the pre-defined baseline sampling proportion
-
-
-## Perform subsampling
-
-* Read sequence, metadata and corrected genomic count matrix
-* Read lists of genomes to be kept or remove in all instances (if provided)
-* Read batch removal file, to exclude genomes from certain metadata categories
-* Perform subsampling guided by case counts per epiweek
-* Generate subsampled sequence, and metadata file
-* Generate report with number of sampled genomes per location
+`assurance` is the last step of quality assurance. Here, the final quality assurance matrix is generated, and a fasta file with quality genomes produced by core labs is created, including only genomes that passed all the check points mentioned above.
 
 
 # Execution
 
-To run this pipeline, users need to provide a TSV file of daily case counts similar to the format below:
+To run this pipeline, users may run each rule separately (eg. snakemake filter_coverage; snakemake mutations, etc), or simply run all steps in one go, using `snakemake assurance`. As a result, a quality assurance matrix similar to the one below will be generated.
 
-**US case counts**
+**Quality assurance matrix**
 
 |code|state         |2021-01-01|2021-01-02|2021-01-03|2021-01-04|2021-01-05|...|
 |----|--------------|----------|----------|----------|----------|----------|---|
