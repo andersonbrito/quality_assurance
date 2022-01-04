@@ -60,6 +60,8 @@ __Figure 1. Workflow Overview__
 - `impacc-virology-clin-individ.csv` (patient metadata)
 - `batch_layout.csv` (batch layout file)
 
+Samples that fail at this step are flagged with 'FAIL' under a new column `metadata_status`, which is added in the quality assurance matrix. A `missing_metadata` column will also list metadata field that caused the failure.
+
 
 ## Creating base dataset
 
@@ -78,12 +80,12 @@ __Figure 1. Workflow Overview__
 
 ## Generating MSA
 
-`multifasta` generates a multiple sequence alignment (MSA) of all sequences listed in the metadata above, using `nextalign`.
+`align` generates a multiple sequence alignment (MSA) of all sequences listed in the metadata above, using `nextalign`.
 
 
-## mutations
+## Inspecting mutations
 
-(*) `inspect_metadata` is a checkpoint step.
+(*) `mutations` is a checkpoint step. Here, any genetic changes leading to 'nonstop', 'nonsense', 'frameshift' mutations will be flagged as 'FAIL', representing genomes that require further inspections due to possible sequencing or assembly issues.
 
 
 ## pangolin
