@@ -68,12 +68,12 @@ __Figure 1. Workflow Overview__
 - `impacc-virology-clin-individ.csv` (patient metadata)
 - `batch_layout.csv` (batch layout file)
 
-Samples that fail at this step are flagged with 'FAIL' under a new column `metadata_status`, which is added in the quality assurance matrix. A `missing_metadata` column will also list metadata field that caused the failure. Likewise, columns `batch_issues` and `batch_status` are added, indicating inconsistencies in the batch layout file.
+Samples that fail at this step are flagged with 'FAIL' under a new column `metadata_status`, which is added in the quality assurance matrix. A `missing_metadata` column will also list metadata fields that caused the failure. Likewise, columns `batch_issues` and `batch_status` are added, indicating inconsistencies in the batch layout file.
 
 
 ## Creating base dataset
 
-`base_dataset` prepares the fasta and metadata files required to proceed with the next steps. For this step, a file `gisaid_hcov-19.fasta` containing all the genomes and a `metadata_nextstrain.tsv` file listing the metadata of those genomes must be provided. These files can be downloaded from gisaid.org, using the list of representative genomes generated under `lineages_rep` as query in the 'Search' webpage (as 'Input for the Augur pipeline').
+`base_dataset` prepares the fasta and metadata files required to proceed with the next steps. For this step, a file `gisaid_hcov-19.fasta` containing all the genomes and a `metadata_nextstrain.tsv` file listing the metadata of those genomes must be provided. Provided that user credentials (login and password) are obtained, these files can be downloaded on [gisaid.org](gisaid.org), using the list of representative genomes generated under `lineages_rep` as query in the 'Search' webpage (downloaded as 'Input for the Augur pipeline').
 
 
 ## Combining metadata files
@@ -88,12 +88,12 @@ Samples that fail at this step are flagged with 'FAIL' under a new column `metad
 
 ## Generating MSA
 
-`align` generates a multiple sequence alignment (MSA) of all sequences listed in the metadata above, using `nextalign`.
+`align` generates a multiple sequence alignment (MSA) of all sequences listed in the metadata cited above, using `nextalign`.
 
 
 ## Inspecting mutations
 
-(*) `mutations` is a checkpoint step. Here, any genetic changes leading to 'nonstop', 'nonsense', 'frameshift' mutations will be flagged as 'FAIL', representing genomes that require further inspections due to possible sequencing or assembly issues.
+(*) `mutations` is a checkpoint step. Here, any genetic changes leading to 'nonstop', 'nonsense', 'frameshift' mutations will be flagged with 'FAIL', representing genomes that require further inspections due to possible sequencing or assembly issues.
 
 
 ## Assigning pangolin lineages
@@ -115,7 +115,7 @@ Samples that fail at this step are flagged with 'FAIL' under a new column `metad
 
 ## Generating final files
 
-`assurance` is the last step of quality assurance. Here, the final quality assurance matrix is generated, and a fasta file with quality genomes produced by core labs is created, including only genomes that passed all the check points mentioned above.
+`assurance` is the last step of quality assurance. Here, the final quality assurance matrix is generated, and a fasta file with quality genomes sequenced by core labs is created, including only genomes that passed all the check points mentioned above.
 
 
 # Execution
