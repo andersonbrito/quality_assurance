@@ -40,7 +40,7 @@ snakemake assurance
 
 # Pipeline overview
 
-![alt text](https://raw.githubusercontent.com/andersonbrito/quality_assurance/master/workflow.svg "Steps of quality assurance")
+![alt text](https://github.com/andersonbrito/quality_assurance/blob/master/images/workflow.svg "Steps of quality assurance")
 
 __Figure 1. Workflow Overview__ 
 
@@ -54,7 +54,7 @@ __Figure 1. Workflow Overview__
 
 ## Generating list of representative genomes from SARS-CoV-2 lineages
 
-`lineages_rep` generates a list of 500 genomes from distinct, randomly selected SARS-CoV-2 lineages, and two ancestral genomes. These genomes will be used in the `root2tip` analysis step. Genome strain names are sampled from the following repository:
+`lineages_rep` generates a list of 500 genomes from distinct, randomly selected SARS-CoV-2 lineages, and two ancestral genomes to root the phylogeny ('Wuhan/Hu-1/2019', 'Wuhan/WH01/2019'). These genomes will be used in the `root2tip` analysis step. Genome strain names are sampled from the following repository:
 
 	https://raw.githubusercontent.com/cov-lineages/pangoLEARN/master/pangoLEARN/data/lineages.downsample.csv
 
@@ -115,15 +115,14 @@ Samples that fail at this step are flagged with 'FAIL' under a new column `metad
 
 ## Generating final files
 
-
 `assurance` is the last step of quality assurance. Here, the final quality assurance matrix is generated, and a fasta file with quality genomes produced by core labs is created, including only genomes that passed all the check points mentioned above.
 
 
 # Execution
 
-To run this pipeline, users may run each rule separately (eg. snakemake filter_coverage; snakemake mutations, etc), or simply run all steps in one go, using `snakemake assurance`. As a result, a quality assurance matrix similar to the one below will be generated.
+To run this pipeline, users can run each rule separately (eg. `snakemake filter_coverage`, `snakemake mutations`, etc), or can simply run all steps in one go, using `snakemake assurance`. As a result, a quality assurance matrix similar to the one below will be generated.
 
 **Quality assurance matrix**
 
-![alt text](https://raw.githubusercontent.com/andersonbrito/quality_assurance/master/workflow.svg "Quality assurance matrix")
+![alt text](https://github.com/andersonbrito/quality_assurance/blob/master/images/qamatrix.png "Quality assurance matrix")
 
