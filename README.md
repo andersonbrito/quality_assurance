@@ -1,6 +1,6 @@
 # IMPACC Quality Assurance
 
-This Snakemake pipeline performs a series of quality assurance steps. It includes five check points, where viral genomes are tagged 'PASS' or 'FAIL', based on: genome coverage; metadata integrity; mutation issues; pango lineage assignment; and molecular clock.
+This Snakemake pipeline performs a series of quality assurance steps. It includes five check points, where viral genomes are tagged with 'PASS' or 'FAIL', based on: genome coverage; metadata integrity; mutation issues; pango lineage assignment; and molecular clock issues.
 
 # Requirements
 
