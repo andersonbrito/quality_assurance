@@ -40,7 +40,7 @@ snakemake assurance
 
 # Pipeline overview
 
-![alt text](https://raw.githubusercontent.com/andersonbrito/quality_assurance/master/workflow.svg "Steps of quality assurance")
+![alt text](https://github.com/andersonbrito/quality_assurance/blob/master/images/workflow.svg "Steps of quality assurance")
 
 __Figure 1. Workflow Overview__ 
 
