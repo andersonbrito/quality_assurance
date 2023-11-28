@@ -47,7 +47,7 @@ __Figure 1. Workflow Overview__
 
 ## Filtering sequences by genome coverage
 
-(*) `filter_coverage` is a checkpoint step. Here, genomes with more than 30% of sites with ambiguities (non-ATCG bases) will be flagged as low coverage. The quality assurance matrix with show the columns: `seq_coverage` (with the proportion of ATGC sites) and `seq_coverage_status` (with 'PASS' or 'FAIL'). In this step, long sequence headers are renamed to show only `sample_id`:
+(*) `filter_coverage` is a checkpoint step. Here, genomes with more than 30% of sites with ambiguities (non-ATCG bases) will be flagged as low coverage. The quality assurance matrix will show the columns: `seq_coverage` (with the proportion of ATGC sites) and `seq_coverage_status` (with 'PASS' or 'FAIL'). In this step, long sequence headers are renamed to show only `sample_id`:
 
 	`Sequence_Identifier:IM_15202.aid_14729.SARS-CoV-2|External_Sample_Identifier:0865-0071KD00-001_015-0015_1` >>> `0865-0071KD00-001`
 
